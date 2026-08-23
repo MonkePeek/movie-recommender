@@ -18,7 +18,13 @@ const SORT_OPTIONS: {
 
 interface FilterPanelProps {
   onFiltersChange: (filters: DiscoverFilters) => void;
+  // True while a free-text search query is active, disables the actor
+  // filter since TMDB's search endpoint returns no cast data to filter on.
   searchActive?: boolean;
+  // Seeds the panel's starting state. App.tsx restores this from
+  // sessionStorage on mount, so filters survive navigating away to a
+  // movie's detail page and back (App fully unmounts/remounts on that
+  // route change, so in-memory state alone wouldn't survive the trip)
   initialFilters?: DiscoverFilters;
 }
 
@@ -33,6 +39,9 @@ export default function FilterPanel({
   const [ratingMin, setRatingMin] = useState<number>(initialFilters?.ratingMin ?? 0);
   const [sort, setSort] = useState<DiscoverFilters["sort"]>(initialFilters?.sort ?? "popularity");
 
+  // initialFilters only carries a numeric castId (see DiscoverFilters),
+  // not a display name, so the actor's name is separately round-tripped
+  // through sessionStorage to restore the input/chip text correctly.
   const [actorQuery, setActorQuery] = useState(()=> {if (!initialFilters?.castId) return "";
     const saved = sessionStorage.getItem("movieSearchActorName");
     return saved ?? "";
@@ -46,6 +55,9 @@ export default function FilterPanel({
   });
   const [actorSearchLoading, setActorSearchLoading] = useState(false);
 
+  // Debounced actor-name lookup: waits for the user to stop typing
+  // before calling TMDB, and skips the call entirely once a specific
+  // person has been selected (no point searching for what's already chosen).
   useEffect(() => {
     if (!actorQuery.trim() || selectedActor) {
       setActorResults([]);
@@ -71,6 +83,9 @@ export default function FilterPanel({
     };
   }, [actorQuery, selectedActor]);
 
+  // Emits the current filter state upward on every change. castId is
+  // force-cleared while searchActive is true so a previously-selected
+  // actor can't silently leak into a search-mode query where it has no effect.
   useEffect(() => {
     onFiltersChange({
       genre: genreId,

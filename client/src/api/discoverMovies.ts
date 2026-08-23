@@ -3,6 +3,8 @@ import type { Movie, SearchMoviesResponse } from "../types/movie";
 const API_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w342";
 
+// Raw shape returned by TMDB, kept separate from our normalized Movie type
+// so a TMDB API change doesn't ripple through every component that uses Movie.
 interface RawMovieResult {
   id: number;
   title: string;
@@ -37,11 +39,14 @@ export interface DiscoverFilters {
   yearFrom?: number;
   yearTo?: number;
   ratingMin?: number;
+  // TMDB person ID, not a name. See searchPerson.ts, which resolves a
+  // typed actor name to this ID before it ever reaches discoverMovies.
   castId?: number;
   sort?: "rating" | "release_date" | "popularity";
   page?: number;
 }
 
+// Maps our UI-friendly sort names to the exact string TMDB's API expects.
 const SORT_MAP: Record<NonNullable<DiscoverFilters["sort"]>, string> = {
   rating: "vote_average.desc",
   release_date: "primary_release_date.desc",
@@ -52,6 +57,8 @@ export async function discoverMovies(
   filters: DiscoverFilters,
   signal?: AbortSignal,
 ): Promise<SearchMoviesResponse> {
+  // Read the key inside the function (not at module scope) so tests can
+  // stub VITE_TMDB_API_KEY via vi.stubEnv before this ever runs.
   const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   if (!API_KEY) {
     throw new Error(
@@ -64,7 +71,11 @@ export async function discoverMovies(
   url.searchParams.set("include_adult", "false");
   url.searchParams.set("sort_by", SORT_MAP[filters.sort ?? "popularity"]);
 
+  // Each filter is only added if set, so an empty FilterPanel produces an
+  // unfiltered "popular movies" query rather than an impossible one.
   if (filters.genre) {url.searchParams.set("with_genres", String(filters.genre))};
+  // TMDB has no "year range" param, so a from/to range is built as two
+  // separate date-boundary filters spanning Jan 1 to Dec 31 of each year.
   if (filters.yearFrom) {url.searchParams.set("primary_release_date.gte", `${filters.yearFrom}-01-01`)};
   if (filters.yearTo) {url.searchParams.set("primary_release_date.lte", `${filters.yearTo}-12-31`)};
   if (filters.ratingMin) {url.searchParams.set("vote_average.gte", String(filters.ratingMin))};
