@@ -91,31 +91,42 @@ function App() {
     filters.ratingMin !== undefined ||
     filters.castId !== undefined ||
     (filters.yearFrom !== undefined && filters.yearFrom !== 1900) ||
-    (filters.yearTo !== undefined && filters.yearTo !== new Date().getFullYear());
+    (filters.yearTo !== undefined &&
+      filters.yearTo !== new Date().getFullYear());
 
   return (
     <section id="search-page">
-      <SearchBar onQueryChange={setQuery} isLoading={isLoading} initialValue={query} />
-      <RandomButton/>
+      <SearchBar
+        onQueryChange={setQuery}
+        isLoading={isLoading}
+        initialValue={query}
+      />
+      <RandomButton />
       <button
         type="button"
         className="filter-toggle"
         onClick={() => setShowFilters((v) => !v)}
         aria-expanded={showFilters}
       >
-        <button
-          type="button"
+        <span
           className="filter-toggle__icon"
           style={{ transform: showFilters ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           ▾
-        </button>
+        </span>
         Filters
-        {hasActiveFilters && <span className="filter-toggle__dot" aria-label="Filters active" />}
+        {hasActiveFilters && (
+          <span className="filter-toggle__dot" aria-label="Filters active" />
+        )}
       </button>
 
-      <div className={`filter-panel-wrap ${showFilters ? "filter-panel-wrap--open" : ""}`}>
-        <FilterPanel onFiltersChange={setFilters} searchActive={query.length > 0} />
+      <div
+        className={`filter-panel-wrap ${showFilters ? "filter-panel-wrap--open" : ""}`}
+      >
+        <FilterPanel
+          onFiltersChange={setFilters}
+          searchActive={query.length > 0}
+        />
       </div>
 
       <SearchResultsList
