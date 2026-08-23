@@ -20,7 +20,7 @@ export default function SearchResultsList({
   hasMore,
   onLoadMore,
   onMovieClick,
-}: SearchResultsListProps) {
+}: Readonly<SearchResultsListProps>) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const handleIntersect = useCallback(
@@ -61,7 +61,7 @@ export default function SearchResultsList({
   }
 
   return (
-    <div className="search-results" role="region" aria-label="Search results">
+    <section className="search-results" aria-label="Search results">
       <p className="visually-hidden" role="status" aria-live="polite">
         {`${movies.length} result${movies.length === 1 ? "" : "s"} found`}
       </p>
@@ -109,6 +109,6 @@ export default function SearchResultsList({
           aria-hidden="true"
         />
       )}
-    </div>
+    </section>
   );
 }
